@@ -27,6 +27,14 @@ public class TaskModel {
 	@CreationTimestamp
 	private LocalDateTime createdAt;
 
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
+	}
+
 	public Long getIdUser() {
 		return idUser;
 	}

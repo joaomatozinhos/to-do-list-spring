@@ -26,27 +26,35 @@ public class FilterTaskAuth extends OncePerRequestFilter {
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
 			throws ServletException, IOException {
 
-		String authorization = request.getHeader("Authorization");
-		String authEncoded = authorization.substring("Basic".length()).trim();
-		byte[] authDecoded = Base64.getDecoder().decode(authEncoded);
-		String authString = new String(authDecoded);
-		String[] credentials = authString.split(":");
-		String username = credentials[0];
-		String password = credentials[1];
+		String servletPath = request.getServletPath();
 
-		UserModel user = userRepository.findByUsername(username);
+		if (servletPath.startsWith("/tasks")) {
+			String authorization = request.getHeader("Authorization");
+			String authEncoded = authorization.substring("Basic".length()).trim();
+			byte[] authDecoded = Base64.getDecoder().decode(authEncoded);
+			String authString = new String(authDecoded);
+			String[] credentials = authString.split(":");
+			String username = credentials[0];
+			String password = credentials[1];
 
-		if (user == null) {
-			response.sendError(401);
-		} else {
-			Result passwordVerify = BCrypt.verifyer().verify(password.toCharArray(), user.getPassword());
+			UserModel user = userRepository.findByUsername(username);
 
-			if (passwordVerify.verified) {
-				filterChain.doFilter(request, response);
-			} else {
+			if (user == null) {
 				response.sendError(401);
+			} else {
+				Result passwordVerify = BCrypt.verifyer().verify(password.toCharArray(), user.getPassword());
+
+				if (passwordVerify.verified) {
+					request.setAttribute("idUser", user.getId());
+					filterChain.doFilter(request, response);
+				} else {
+					response.sendError(401);
+				}
 			}
+		} else {
+			filterChain.doFilter(request, response);
 		}
+
 	}
 
 }
